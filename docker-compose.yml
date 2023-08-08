@@ -1,7 +1,7 @@
 version: '3'
 services:
   apt-cache:
-    build: .
+    image: ghcr.io/adridevelopsthings/apt-cache:main
     volumes:
       - ./config.toml:/config.toml
       - ./cache:/cache
