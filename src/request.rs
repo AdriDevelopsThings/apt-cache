@@ -19,6 +19,8 @@ use tokio_util::io::ReaderStream;
 
 use crate::{config::Config, error::AptCacheError};
 
+/// get the file path to the cache file
+/// the path will look like this: {cache_directory}/{repository_name}/{hash_of_path}
 fn get_cache_file_path(config: &Config, repository: &str, path: &str) -> String {
     let mut hasher = Sha1::new();
     hasher.update(path.as_bytes());
@@ -26,7 +28,7 @@ fn get_cache_file_path(config: &Config, repository: &str, path: &str) -> String 
     format!("{}/{repository}/{:x}", config.cache_directory, hash)
 }
 
-// create a cache file
+/// cache the stream to cache and get a new stream
 async fn cache_file(
     config: &Config,
     stream: impl Stream<Item = Result<Bytes, reqwest::Error>>,
@@ -54,6 +56,8 @@ async fn cache_file(
     }
 }
 
+/// check if the cache_file has expired and delete the file if it's expired
+/// this function will return `false` if the file has expired
 async fn check_file_ttl(config: &Config, cache_file: &Path) -> bool {
     let modified = metadata(cache_file).await.unwrap().modified().unwrap();
     let duration = SystemTime::now().duration_since(modified).unwrap();
@@ -65,6 +69,8 @@ async fn check_file_ttl(config: &Config, cache_file: &Path) -> bool {
     true
 }
 
+/// May get a stream of a cached repository/url
+/// this function will return `None` if the repository/url isn't cached yet
 async fn get_cached_file(
     config: &Config,
     repository: &str,
@@ -85,7 +91,15 @@ async fn get_cached_file(
     }
 }
 
-// this function should return a stream that will be written to the response body
+/// request a file (path) in the given repository
+/// this function may return `Err(AptCache::RepositoryNotFound)` if the given repository does not exist
+/// The result will look like this:
+/// ```no_run
+/// match return_value {
+///     Some((status_code: StatusCode, cached:bool, body_stream: BoxStream<'a, Bytes>)),
+///     Err(e: AptCacheError)
+/// }
+/// ```
 pub async fn request_file<'a>(
     config: &Config,
     repository: &str,
@@ -125,6 +139,7 @@ pub async fn request_file<'a>(
     ))
 }
 
+/// Run a worker that will check every 60 seconds if a cache file has expired and delete the file if necessary
 pub async fn run_cache_ttl_worker(config: Config) {
     loop {
         let mut repositories = read_dir(&config.cache_directory).await.unwrap();
