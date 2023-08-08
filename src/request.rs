@@ -95,6 +95,9 @@ pub async fn request_file<'a>(
         .get_repository(repository)
         .ok_or(AptCacheError::RepositoryNotFound)?;
     if let Some(cached) = get_cached_file(config, repository, path).await {
+        if !config.disable_logging {
+            println!("GET {repository}/{path} 200 (cached)");
+        }
         return Ok((StatusCode::OK, true, Box::pin(cached)));
     }
     let url = format!("{}{}", repo.url, path);
@@ -107,7 +110,13 @@ pub async fn request_file<'a>(
                 yield bytes.unwrap();
             }
         };
+        if !config.disable_logging {
+            println!("GET {repository}/{path} {status}");
+        }
         return Ok((status, false, Box::pin(stream)));
+    }
+    if !config.disable_logging {
+        println!("GET {repository}/{path} 200");
     }
     Ok((
         StatusCode::OK,

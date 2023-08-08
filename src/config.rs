@@ -25,6 +25,8 @@ pub struct Config {
     pub cache_directory: String,
     #[serde(default = "default_cache_ttl")]
     pub cache_ttl: u64,
+    #[serde(default)]
+    pub disable_logging: bool,
 }
 
 impl Config {
@@ -38,7 +40,7 @@ impl Config {
                 self.cache_directory = cache_path;
             }
         }
-        
+
         let path = Path::new(&self.cache_directory);
         if !path.exists() {
             create_dir(path)

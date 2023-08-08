@@ -1,0 +1,3 @@
+[[repository]]
+name = "ubuntu-ports"
+url = "http://ports.ubuntu.com/ubuntu-ports/"
